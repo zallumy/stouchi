@@ -23,7 +23,7 @@ window.APP_CONFIG = {
   // The secret you typed in n8n's "Header Auth" credential (the Value field).
   // Leave it empty ("") if you prefer to type the key in the dashboard itself
   // (recommended if you put the dashboard online — see README, step 8).
-  apiKey: "achref113.",
+  apiKey: "achref123",
 
   // The header name. Must match the "Name" field of the Header Auth credential.
   apiKeyHeader: "x-api-key",
