@@ -18,12 +18,12 @@ window.APP_CONFIG = {
   // The PRODUCTION URL of your "Expense Dashboard API" webhook in n8n.
   // It looks like: https://YOUR-N8N-DOMAIN/webhook/expenses-dashboard
   // (NOT the /webhook-test/ URL — that one only works while you click "Listen".)
-  webhookUrl: "https://YOUR-N8N-DOMAIN/webhook/expenses-dashboard",
+  webhookUrl: "https://n8n.nexmazlab.com/webhook/stouchi-dashboard",
 
   // The secret you typed in n8n's "Header Auth" credential (the Value field).
   // Leave it empty ("") if you prefer to type the key in the dashboard itself
   // (recommended if you put the dashboard online — see README, step 8).
-  apiKey: "PASTE-YOUR-SECRET-KEY-HERE",
+  apiKey: "achref113.",
 
   // The header name. Must match the "Name" field of the Header Auth credential.
   apiKeyHeader: "x-api-key",
