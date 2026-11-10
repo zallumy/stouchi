@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>My Expenses</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232a78d6'/%3E%3Cpath d='M9 21h4V14H9zm5 0h4V9h-4zm5 0h4v-9h-4z' fill='white'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="page">
+
+    <!-- ===================== HEADER ===================== -->
+    <header class="topbar">
+      <div>
+        <h1>My Expenses</h1>
+        <p class="muted small" id="last-updated">Not loaded yet</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn" id="btn-export" type="button" disabled title="Download the expenses in the table as a CSV file">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          <span>Export CSV</span>
+        </button>
+        <button class="btn icon-only" id="btn-key" type="button" title="Change API key" aria-label="Change API key">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9m-3 3 3 3m-6 0 2 2"/></svg>
+        </button>
+        <button class="btn primary" id="btn-refresh" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+          <span>Refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Messages: errors, warnings, setup help -->
+    <div id="notices" aria-live="polite"></div>
+
+    <!-- API key form (shown only when no key is set) -->
+    <section class="card key-card" id="key-card" hidden>
+      <h2>Enter your API key</h2>
+      <p class="muted">This is the secret value you saved in n8n's <b>Header Auth</b> credential. It stays in this browser only.</p>
+      <form id="key-form" class="key-form">
+        <input type="password" id="key-input" autocomplete="off" placeholder="Your secret key" required />
+        <button class="btn primary" type="submit">Save &amp; load</button>
+      </form>
+      <button class="link-btn" id="key-forget" type="button">Forget the saved key on this device</button>
+    </section>
+
+    <main id="dashboard">
+
+      <!-- ===================== FILTERS ===================== -->
+      <section class="filters card" aria-label="Filters">
+        <label class="field">
+          <span>Period</span>
+          <select id="filter-range">
+            <option value="today">Today</option>
+            <option value="week">This week</option>
+            <option value="month" selected>This month</option>
+            <option value="lastmonth">Last month</option>
+            <option value="last3">Last 3 months</option>
+            <option value="all">All time</option>
+            <option value="custom">Custom…</option>
+          </select>
+        </label>
+        <label class="field custom-date" hidden>
+          <span>From</span>
+          <input type="date" id="filter-from" />
+        </label>
+        <label class="field custom-date" hidden>
+          <span>To</span>
+          <input type="date" id="filter-to" />
+        </label>
+        <label class="field">
+          <span>Category</span>
+          <select id="filter-category">
+            <option value="">All categories</option>
+          </select>
+        </label>
+        <p class="filter-summary" id="filter-summary"></p>
+      </section>
+
+      <!-- ===================== KPI CARDS ===================== -->
+      <section class="kpis" id="kpis" aria-label="Key numbers">
+        <article class="kpi"><h3>Spent this month</h3><p class="kpi-value" id="kpi-month">—</p><p class="kpi-sub" id="kpi-month-sub"></p></article>
+        <article class="kpi"><h3>Spent today</h3><p class="kpi-value" id="kpi-today">—</p><p class="kpi-sub" id="kpi-today-sub"></p></article>
+        <article class="kpi"><h3>Spent this week</h3><p class="kpi-value" id="kpi-week">—</p><p class="kpi-sub" id="kpi-week-sub"></p></article>
+        <article class="kpi"><h3>Daily average (this month)</h3><p class="kpi-value" id="kpi-avg">—</p><p class="kpi-sub" id="kpi-avg-sub"></p></article>
+        <article class="kpi"><h3>Expenses this month</h3><p class="kpi-value" id="kpi-count">—</p><p class="kpi-sub" id="kpi-count-sub"></p></article>
+        <article class="kpi"><h3>Top category this month</h3><p class="kpi-value" id="kpi-top">—</p><p class="kpi-sub" id="kpi-top-sub"></p></article>
+      </section>
+      <p class="muted small kpi-note" id="kpi-note"></p>
+
+      <!-- ===================== INSIGHTS ===================== -->
+      <section class="card insights" aria-labelledby="insights-title">
+        <div class="card-head">
+          <h2 id="insights-title">Insights</h2>
+          <span class="muted small">Whole months, all categories</span>
+        </div>
+        <div class="insights-body">
+          <ul class="insight-list" id="insight-list"></ul>
+          <div class="tobacco-box">
+            <h3>Tobacco, last 6 months</h3>
+            <div class="chart-wrap small-chart"><canvas id="chart-tobacco" aria-label="Tobacco spending by month"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== CHARTS ===================== -->
+      <section class="charts">
+        <article class="card">
+          <div class="card-head"><h2>Spending by category</h2></div>
+          <div class="category-layout">
+            <div class="chart-wrap donut-wrap">
+              <canvas id="chart-category" aria-label="Spending by category"></canvas>
+              <div class="donut-center"><span class="muted small">Total</span><strong id="donut-total">—</strong></div>
+            </div>
+            <ul class="legend-list" id="category-legend"></ul>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head"><h2 id="trend-title">Daily spending</h2></div>
+          <div class="chart-wrap"><canvas id="chart-trend" aria-label="Spending over time"></canvas></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><h2>Monthly totals</h2><span class="muted small" id="monthly-note"></span></div>
+          <div class="chart-wrap"><canvas id="chart-monthly" aria-label="Monthly totals"></canvas></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><h2>By day of week</h2></div>
+          <div class="chart-wrap"><canvas id="chart-weekday" aria-label="Spending by day of week"></canvas></div>
+        </article>
+      </section>
+
+      <!-- ===================== BUDGETS (optional) ===================== -->
+      <section class="card" id="budgets-card" hidden aria-labelledby="budgets-title">
+        <div class="card-head">
+          <h2 id="budgets-title">Budgets this month</h2>
+          <span class="muted small">Set them in config.js</span>
+        </div>
+        <ul class="budget-list" id="budget-list"></ul>
+      </section>
+
+      <!-- ===================== TABLE ===================== -->
+      <section class="card" aria-labelledby="table-title">
+        <div class="card-head table-head">
+          <h2 id="table-title">Expenses</h2>
+          <input type="search" id="table-search" placeholder="Search description…" aria-label="Search by description" />
+        </div>
+        <p class="muted small" id="table-count"></p>
+        <div class="table-scroll">
+          <table class="expense-table">
+            <thead>
+              <tr><th>Date</th><th>Description</th><th>Category</th><th class="num">Amount</th></tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+        <button class="btn more-btn" id="btn-more" type="button" hidden>Show more</button>
+      </section>
+    </main>
+
+    <footer class="muted small footer">Data comes from your n8n workflow → Google Sheet “Expenses”.</footer>
+  </div>
+
+  <!-- Your settings. If this file is missing, the dashboard tells you what to do. -->
+  <script src="config.js"></script>
+  <!-- Chart.js library (draws the charts), loaded from a public CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+  <!-- The dashboard code, in the order it is needed -->
+  <script src="js/utils.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
